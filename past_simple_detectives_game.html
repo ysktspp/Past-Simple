@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Past Simple Detectives: Секрет закінчення -ed</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Fredoka', 'Nunito', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .game-font {
+      font-family: 'Fredoka', sans-serif;
+    }
+    /* Detective theme custom patterns */
+    .detective-bg {
+      background: radial-gradient(circle at 20% 20%, #fef3c7 0%, #fed7aa 45%, #fdba74 100%);
+    }
+    .wood-card {
+      background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+      box-shadow: 0 10px 25px -5px rgba(120, 53, 15, 0.15), 0 8px 10px -6px rgba(120, 53, 15, 0.1);
+    }
+    .suitcase-slot {
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .suitcase-slot:hover {
+      transform: translateY(-4px) scale(1.02);
+    }
+    .badge-glow {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+    }
+    /* Pulse anim for active card */
+    @keyframes pulseRing {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.5); }
+      70% { transform: scale(1.03); box-shadow: 0 0 0 12px rgba(217, 119, 6, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+    }
+    .card-selected {
+      animation: pulseRing 1.4s infinite;
+      border-color: #d97706 !important;
+      background: #fef3c7 !important;
+    }
+  </style>
+</head>
+<body class="detective-bg min-h-screen text-amber-950 flex flex-col justify-between">
+
+  <!-- TOP APP BAR -->
+  <header class="w-full bg-amber-900/95 text-amber-50 backdrop-blur-md px-4 py-3 sticky top-0 z-40 shadow-lg border-b-4 border-amber-600">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 bg-amber-500 rounded-2xl flex items-center justify-center text-2xl shadow-inner border-2 border-amber-200">
+          🔍
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-wide flex items-center gap-2">
+            Past Simple Detectives
+            <span class="text-xs bg-amber-700/80 text-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline">4-й клас</span>
+          </h1>
+          <p class="text-xs text-amber-200/90 hidden sm:block">Справа про таємниче закінчення -ed</p>
+        </div>
+      </div>
+
+      <!-- Player Stats: Score, Streak, Rank -->
+      <div class="flex items-center gap-2 sm:gap-4 ml-auto">
+        <!-- Rank Pill -->
+        <div class="bg-amber-800/80 px-3 py-1.5 rounded-xl border border-amber-600 flex items-center gap-2 shadow-sm">
+          <span id="rankIcon" class="text-xl">🕵️‍♂️</span>
+          <div class="text-left leading-tight hidden xs:block">
+            <div class="text-[10px] text-amber-300 font-bold uppercase">Звання:</div>
+            <div id="rankLabel" class="text-xs sm:text-sm font-black text-amber-100">Стажер</div>
+          </div>
+        </div>
+
+        <!-- Score -->
+        <div class="bg-amber-950/80 px-3 py-1.5 rounded-xl border border-amber-700 flex items-center gap-2">
+          <span class="text-amber-400 font-bold text-xs sm:text-sm">⭐ Бали:</span>
+          <span id="scoreVal" class="text-base sm:text-lg font-black text-yellow-300">0</span>
+        </div>
+
+        <!-- Combo Streak -->
+        <div class="bg-amber-950/80 px-2.5 py-1.5 rounded-xl border border-amber-700 flex items-center gap-1.5" title="Серія правильних відповідей">
+          <span class="text-orange-400">🔥</span>
+          <span id="streakVal" class="text-sm font-black text-orange-200">0</span>
+        </div>
+
+        <!-- Rules Button -->
+        <button onclick="toggleModal('rulesModal', true)" class="bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold p-2 sm:px-3 rounded-xl transition shadow flex items-center gap-1 active:scale-95" title="Шпаргалка правил">
+          <span>📖</span>
+          <span class="hidden md:inline text-xs font-black">Правила</span>
+        </button>
+
+        <!-- Sound Toggle -->
+        <button id="soundBtn" onclick="toggleMute()" class="bg-amber-700 hover:bg-amber-600 text-amber-100 p-2 rounded-xl transition shadow active:scale-95 text-lg" title="Звук">
+          🔊
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="max-w-5xl mx-auto w-full px-3 sm:px-6 py-4 flex-1 flex flex-col justify-start">
+    
+    <!-- MODE SELECTOR TABS -->
+    <div class="flex justify-center mb-5">
+      <div class="bg-amber-900/40 p-1.5 rounded-2xl flex flex-wrap justify-center gap-1 sm:gap-2 border border-amber-700/50 backdrop-blur-sm max-w-full">
+        <button onclick="switchMode(1)" id="tabMode1" class="mode-tab px-3 sm:px-5 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 bg-amber-500 text-amber-950 shadow-md">
+          <span>🧳</span> 1: Сортування валіз
+        </button>
+        <button onclick="switchMode(2)" id="tabMode2" class="mode-tab px-3 sm:px-5 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 text-amber-900 hover:bg-amber-200/60">
+          <span>🕵️</span> 2: Злови самозванця
+        </button>
+        <button onclick="switchMode(3)" id="tabMode3" class="mode-tab px-3 sm:px-5 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 text-amber-900 hover:bg-amber-200/60">
+          <span>📜</span> 3: Секретний шифр
+        </button>
+      </div>
+    </div>
+
+    <!-- LEVEL PROGRESS BAR -->
+    <div class="mb-4 bg-white/70 backdrop-blur-sm p-3 rounded-2xl border-2 border-amber-300 shadow-sm">
+      <div class="flex justify-between items-center text-xs font-bold text-amber-800 mb-1">
+        <span id="modeProgressLabel">Прогрес розслідування:</span>
+        <span id="modeProgressPercent">0 / 0</span>
+      </div>
+      <div class="w-full bg-amber-200/70 h-3.5 rounded-full overflow-hidden p-0.5">
+        <div id="progressBar" class="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-300 w-0"></div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION HINT BANNER -->
+    <div id="feedbackBanner" class="min-h-[48px] mb-3 flex items-center justify-center text-center text-sm font-bold px-4 py-2 rounded-2xl transition-all duration-200 opacity-0 transform -translate-y-2 pointer-events-none">
+      <span id="feedbackText">Підказка з'явиться тут</span>
+    </div>
+
+    <!-- ==============================================
+         MODE 1: SUITCASE SORTING (СОРТУВАННЯ ВАЛІЗ)
+    =================================================== -->
+    <section id="mode1Container" class="game-section flex flex-col gap-4">
+      
+      <!-- Instruction & Active Card Box -->
+      <div class="wood-card p-4 rounded-3xl border-2 border-amber-300 text-center relative overflow-hidden">
+        <div class="text-xs sm:text-sm font-semibold text-amber-700 uppercase tracking-wider mb-1">
+          Знайдений доказ (натисни або перетягни у валізу):
+        </div>
+
+        <!-- The Current Word Token Area -->
+        <div class="py-2 flex flex-wrap items-center justify-center gap-3" id="clueDeck">
+          <!-- Dynamic word token will be injected here -->
+        </div>
+
+        <p class="text-xs text-amber-600 mt-1">Обери дієслово зверху, а потім натисни на потрібну валізу внизу!</p>
+      </div>
+
+      <!-- 4 Suitcases (Buckets) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        
+        <!-- Suitcase 1: +ed -->
+        <div onclick="targetSuitcaseClicked('ed')" class="suitcase-slot bg-gradient-to-b from-sky-50 to-sky-100 border-4 border-sky-400 p-4 rounded-3xl cursor-pointer flex flex-col items-center text-center shadow-md relative group">
+          <div class="text-4xl sm:text-5xl mb-1 transform group-hover:scale-110 transition">🧳</div>
+          <div class="text-xs font-bold uppercase tracking-wider text-sky-700 bg-sky-200/80 px-2 py-0.5 rounded-md mb-1">Правило 1</div>
+          <h2 class="text-xl font-black text-sky-900">+ ed</h2>
+          <p class="text-xs text-sky-800 mt-1 font-semibold">Базове правило (також голосна + y)</p>
+          <div class="text-[11px] text-sky-600 mt-1 italic">play ➔ played, walk ➔ walked</div>
+          <!-- Completed words count pill -->
+          <div id="count-ed" class="mt-3 bg-sky-500 text-white font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-inner">0 розкрито</div>
+        </div>
+
+        <!-- Suitcase 2: +d -->
+        <div onclick="targetSuitcaseClicked('d')" class="suitcase-slot bg-gradient-to-b from-emerald-50 to-emerald-100 border-4 border-emerald-400 p-4 rounded-3xl cursor-pointer flex flex-col items-center text-center shadow-md relative group">
+          <div class="text-4xl sm:text-5xl mb-1 transform group-hover:scale-110 transition">💼</div>
+          <div class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-200/80 px-2 py-0.5 rounded-md mb-1">Правило 2</div>
+          <h2 class="text-xl font-black text-emerald-900">+ d</h2>
+          <p class="text-xs text-emerald-800 mt-1 font-semibold">Дієслова із закінченням на <b>-e</b></p>
+          <div class="text-[11px] text-emerald-600 mt-1 italic">dance ➔ danced, like ➔ liked</div>
+          <div id="count-d" class="mt-3 bg-emerald-500 text-white font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-inner">0 розкрито</div>
+        </div>
+
+        <!-- Suitcase 3: y -> ied -->
+        <div onclick="targetSuitcaseClicked('ied')" class="suitcase-slot bg-gradient-to-b from-purple-50 to-purple-100 border-4 border-purple-400 p-4 rounded-3xl cursor-pointer flex flex-col items-center text-center shadow-md relative group">
+          <div class="text-4xl sm:text-5xl mb-1 transform group-hover:scale-110 transition">👝</div>
+          <div class="text-xs font-bold uppercase tracking-wider text-purple-700 bg-purple-200/80 px-2 py-0.5 rounded-md mb-1">Правило 3</div>
+          <h2 class="text-xl font-black text-purple-900">y ➔ -ied</h2>
+          <p class="text-xs text-purple-800 mt-1 font-semibold">Приголосна + <b>y</b></p>
+          <div class="text-[11px] text-purple-600 mt-1 italic">cry ➔ cried, study ➔ studied</div>
+          <div id="count-ied" class="mt-3 bg-purple-500 text-white font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-inner">0 розкрито</div>
+        </div>
+
+        <!-- Suitcase 4: Double consonant +ed -->
+        <div onclick="targetSuitcaseClicked('double')" class="suitcase-slot bg-gradient-to-b from-amber-50 to-amber-100 border-4 border-amber-500 p-4 rounded-3xl cursor-pointer flex flex-col items-center text-center shadow-md relative group">
+          <div class="text-4xl sm:text-5xl mb-1 transform group-hover:scale-110 transition">📦</div>
+          <div class="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-200/80 px-2 py-0.5 rounded-md mb-1">Правило 4</div>
+          <h2 class="text-xl font-black text-amber-900">Подвоєння +ed</h2>
+          <p class="text-xs text-amber-800 mt-1 font-semibold">Короткий голосний + приголосна</p>
+          <div class="text-[11px] text-amber-700 mt-1 italic">stop ➔ stopped, clap ➔ clapped</div>
+          <div id="count-double" class="mt-3 bg-amber-600 text-white font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-inner">0 розкрито</div>
+        </div>
+
+      </div>
+
+      <!-- Solved Log Details Accordion -->
+      <div class="bg-white/60 p-3 rounded-2xl border border-amber-200 text-xs">
+        <span class="font-bold text-amber-900">📋 Останні розкриті дієслова:</span>
+        <span id="solvedWordsList" class="text-amber-800 ml-2 font-medium">ще немає... почніть сортування!</span>
+      </div>
+
+    </section>
+
+    <!-- ==============================================
+         MODE 2: CATCH THE IMPOSTOR (ЗЛОВИ САМОЗВАНЦЯ)
+    =================================================== -->
+    <section id="mode2Container" class="game-section hidden flex flex-col items-center gap-4">
+      
+      <div class="wood-card w-full max-w-xl p-6 sm:p-8 rounded-3xl border-4 border-amber-300 text-center relative shadow-xl">
+        
+        <div class="inline-block bg-amber-200 text-amber-900 text-xs font-black uppercase px-3 py-1 rounded-full mb-3">
+          Доказ під мікроскопом #<span id="impostorIndex">1</span>
+        </div>
+
+        <p class="text-sm sm:text-base text-amber-800 font-semibold mb-4">
+          Чи правильно написано дієслово у Past Simple?
+        </p>
+
+        <!-- The Suspicious Evidence Card -->
+        <div class="my-4 bg-amber-50 p-6 rounded-2xl border-2 border-dashed border-amber-400 inline-block min-w-[220px]">
+          <div id="impostorWord" class="text-3xl sm:text-4xl font-black tracking-wider text-amber-950 font-mono">
+            stoped
+          </div>
+          <div id="impostorHintBase" class="text-xs text-amber-600 mt-2 font-bold">
+            (початкова форма: stop)
+          </div>
+        </div>
+
+        <!-- Action Choice Buttons -->
+        <div id="impostorActionButtons" class="grid grid-cols-2 gap-4 mt-4">
+          <button onclick="handleImpostorVerdict(true)" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 sm:py-4 px-4 rounded-2xl shadow-lg border-b-4 border-emerald-700 active:translate-y-1 transition flex flex-col items-center justify-center">
+            <span class="text-2xl sm:text-3xl">✅</span>
+            <span class="text-sm sm:text-base mt-1">Справжній доказ!</span>
+            <span class="text-[11px] font-normal opacity-90">(Правильно)</span>
+          </button>
+          
+          <button onclick="handleImpostorVerdict(false)" class="bg-rose-500 hover:bg-rose-600 text-white font-black py-3 sm:py-4 px-4 rounded-2xl shadow-lg border-b-4 border-rose-700 active:translate-y-1 transition flex flex-col items-center justify-center">
+            <span class="text-2xl sm:text-3xl">🚨</span>
+            <span class="text-sm sm:text-base mt-1">Самозванець!</span>
+            <span class="text-[11px] font-normal opacity-90">(Тут помилка!)</span>
+          </button>
+        </div>
+
+        <!-- Fix Choice Area (Shown if player correctly calls fake) -->
+        <div id="impostorFixArea" class="hidden mt-6 pt-4 border-t-2 border-amber-200">
+          <p class="text-xs sm:text-sm font-bold text-amber-900 mb-3">
+            🔧 Молодець! А як це слово пишеться <span class="text-emerald-700 underline">правильно</span>?
+          </p>
+          <div id="impostorOptions" class="flex flex-wrap justify-center gap-3">
+            <!-- Injected options -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==============================================
+         MODE 3: DETECTIVE SECRET CODE (СЕКРЕТНИЙ ШИФР)
+    =================================================== -->
+    <section id="mode3Container" class="game-section hidden flex flex-col items-center gap-4">
+      
+      <div class="wood-card w-full max-w-2xl p-6 sm:p-8 rounded-3xl border-4 border-amber-300 shadow-xl relative">
+        <div class="flex justify-between items-center mb-4">
+          <span class="bg-amber-200 text-amber-950 font-black text-xs px-3 py-1 rounded-full uppercase">
+            Справа №<span id="sentenceIndex">1</span> з <span id="sentenceTotal">6</span>
+          </span>
+          <span class="text-xl">📜</span>
+        </div>
+
+        <h3 class="text-xs sm:text-sm font-bold text-amber-700 uppercase mb-2">Віднови щоденник детектива:</h3>
+        
+        <!-- Sentence container with blank -->
+        <div class="bg-amber-100/70 p-5 rounded-2xl border border-amber-300 text-lg sm:text-2xl font-black text-amber-950 leading-relaxed my-4 text-center">
+          <span id="sentencePrefix">Yesterday, Detective Leo</span>
+          <span id="sentenceBlank" class="mx-1 px-3 py-1 bg-amber-300/80 rounded-lg border-b-4 border-amber-500 inline-block text-amber-900 font-mono min-w-[100px] text-center">
+            ______
+          </span>
+          <span id="sentenceSuffix">his messy room.</span>
+        </div>
+
+        <!-- Helper hint indicating base form -->
+        <div class="text-center text-xs sm:text-sm font-bold text-amber-700 mb-6">
+          Інфінітив у дужках: <span id="sentenceBaseWord" class="bg-white px-2.5 py-1 rounded-md border border-amber-300 text-amber-950 font-black">tidy</span>
+        </div>
+
+        <!-- Multiple Choice Options -->
+        <div id="sentenceOptionsGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Injected dynamically -->
+        </div>
+
+        <!-- Sentence Explanation (Hidden until answer) -->
+        <div id="sentenceExplanation" class="hidden mt-5 p-3 rounded-xl bg-amber-200/80 border border-amber-400 text-xs text-amber-900 font-semibold text-center">
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- GAME OVER / REWARD DIALOG (Hidden by default) -->
+    <div id="winModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white max-w-md w-full rounded-3xl p-6 sm:p-8 text-center shadow-2xl border-4 border-amber-400 transform transition-all scale-95 animate-[bounce_0.5s_ease-out]">
+        <div class="text-6xl mb-2">🏆</div>
+        <div class="text-xs font-black uppercase text-amber-600 tracking-wider">Справа успішно розкрита!</div>
+        <h2 class="text-2xl sm:text-3xl font-black text-amber-950 mt-1">Блискуча робота, детектив!</h2>
+        
+        <div class="my-4 p-4 bg-amber-50 rounded-2xl border border-amber-200">
+          <div class="text-3xl font-black text-amber-600 mb-1" id="finalScoreVal">0</div>
+          <div class="text-xs text-amber-800 font-bold">Остаточний рахунок очок</div>
+          <div class="mt-2 text-sm font-extrabold text-amber-900" id="finalRankDesc">
+            Ви заслужили звання: Старший Інспектор 🌟
+          </div>
+        </div>
+
+        <p class="text-xs text-amber-700 mb-6">
+          Тепер ти справжній експерт із додавання закінчень <b>-ed, -d, -ied</b> та правила подвоєння!
+        </p>
+
+        <div class="flex flex-col gap-2">
+          <button onclick="restartFullGame()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black py-3 rounded-2xl shadow-lg transition active:scale-95 text-base">
+            🔄 Розслідувати знову!
+          </button>
+          <button onclick="toggleModal('winModal', false)" class="w-full bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold py-2.5 rounded-2xl transition text-sm">
+            Залишитись і переглянути
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RULES REFERENCE MODAL -->
+    <div id="rulesModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white max-w-lg w-full rounded-3xl p-6 sm:p-7 shadow-2xl border-4 border-amber-400 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center pb-3 border-b border-amber-200">
+          <h2 class="text-xl font-black text-amber-950 flex items-center gap-2">
+            <span>📖</span> Шпаргалка Детектива (Past Simple)
+          </h2>
+          <button onclick="toggleModal('rulesModal', false)" class="text-gray-400 hover:text-gray-700 text-2xl font-black leading-none">&times;</button>
+        </div>
+
+        <div class="mt-4 space-y-3.5 text-xs sm:text-sm text-amber-950">
+          <div class="p-3 bg-sky-50 rounded-2xl border-2 border-sky-200">
+            <span class="font-bold text-sky-900 text-sm">1. Звичайне правило (+ed):</span>
+            <p class="mt-0.5">До більшості слів просто додаємо <b>-ed</b>.</p>
+            <p class="italic text-sky-800 font-semibold mt-1">walk ➔ walked, help ➔ helped, wash ➔ washed</p>
+            <p class="text-[11px] text-sky-700 mt-1">⚠️ <b>Важливо:</b> Якщо перед <b>y</b> стоїть голосна (a, e, o), <b>y</b> не змінюється! <i>play ➔ played, stay ➔ stayed</i>.</p>
+          </div>
+
+          <div class="p-3 bg-emerald-50 rounded-2xl border-2 border-emerald-200">
+            <span class="font-bold text-emerald-900 text-sm">2. Якщо дієслово закінчується на -e (+d):</span>
+            <p class="mt-0.5">Додаємо лише <b>-d</b> (щоб не було двох "е").</p>
+            <p class="italic text-emerald-800 font-semibold mt-1">dance ➔ danced, live ➔ lived, close ➔ closed, bake ➔ baked</p>
+          </div>
+
+          <div class="p-3 bg-purple-50 rounded-2xl border-2 border-purple-200">
+            <span class="font-bold text-purple-900 text-sm">3. Приголосна + y (y ➔ -ied):</span>
+            <p class="mt-0.5">Літера <b>y</b> тікає і перетворюється на <b>-ied</b>.</p>
+            <p class="italic text-purple-800 font-semibold mt-1">cr<b>y</b> ➔ cried, stud<b>y</b> ➔ studied, tid<b>y</b> ➔ tidied, tr<b>y</b> ➔ tried</p>
+          </div>
+
+          <div class="p-3 bg-amber-50 rounded-2xl border-2 border-amber-300">
+            <span class="font-bold text-amber-900 text-sm">4. Подвоєння кінцевої приголосної:</span>
+            <p class="mt-0.5">Коротке слово: <i>1 голосний звук + 1 кінцевий приголосний</i> ➔ остання буква подвоюється!</p>
+            <p class="italic text-amber-800 font-semibold mt-1">st<b>op</b> ➔ sto<b>pp</b>ed, cl<b>ap</b> ➔ cla<b>pp</b>ed, j<b>og</b> ➔ jo<b>gg</b>ed, h<b>op</b> ➔ ho<b>pp</b>ed</p>
+          </div>
+        </div>
+
+        <button onclick="toggleModal('rulesModal', false)" class="mt-5 w-full bg-amber-500 hover:bg-amber-600 text-amber-950 font-black py-2.5 rounded-xl transition shadow">
+          Зрозуміло! До розслідування 🚀
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="w-full text-center py-2.5 text-xs font-bold text-amber-900/70 border-t border-amber-300/40 bg-amber-100/40">
+    Past Simple Detectives • Інтерактивний тренажер для 4 класу • Англійська мова
+  </footer>
+
+  <!-- ==============================================
+       GAME LOGIC JAVASCRIPT
+  =================================================== -->
+  <script>
+    /* ----------------------------------------------------
+       AUDIO SYNTHESIS SYSTEM (Web Audio API)
+       No external sound files required!
+    ---------------------------------------------------- */
+    let audioCtx = null;
+    let isMuted = false;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      document.getElementById('soundBtn').textContent = isMuted ? '🔇' : '🔊';
+      if (!isMuted) playSound('click');
+    }
+
+    function playSound(type) {
+      if (isMuted) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+
+        if (type === 'click') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.05);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        } else if (type === 'correct') {
+          // Cheerful chime chord
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + i * 0.05);
+            gain.gain.setValueAtTime(0.2, now + i * 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + i * 0.05);
+            osc.stop(now + i * 0.05 + 0.35);
+          });
+        } else if (type === 'wrong') {
+          // Low gentle double boop
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.setValueAtTime(130, now + 0.12);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'fanfare') {
+          // Winning trumpet fanfare
+          const notes = [440, 554.37, 659.25, 880];
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            gain.gain.setValueAtTime(0.25, now + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.4);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.45);
+          });
+        }
+      } catch (e) {
+        console.warn('Audio not initialized yet or not supported');
+      }
+    }
+
+    /* ----------------------------------------------------
+       GAME STATE & DATA
+    ---------------------------------------------------- */
+    let score = 0;
+    let streak = 0;
+    let currentMode = 1;
+
+    // Ranks based on total score
+    const RANKS = [
+      { min: 0, title: 'Стажер-детектив', icon: '🔍' },
+      { min: 60, title: 'Молодший слідчий', icon: '🕵️' },
+      { min: 140, title: 'Майстер детектив', icon: '🎖️' },
+      { min: 220, title: 'Шеф інспекції', icon: '👑' }
+    ];
+
+    /* MODE 1 WORDS DATA:
+       suitcases: 'ed', 'd', 'ied', 'double'
+    */
+    const MODE1_ITEMS = [
+      { base: 'walk', past: 'walked', rule: 'ed', note: 'Звичайне дієслово (+ed)' },
+      { base: 'dance', past: 'danced', rule: 'd', note: 'Закінчується на -e (+d)' },
+      { base: 'cry', past: 'cried', rule: 'ied', note: 'Приголосна r + y ➔ -ied' },
+      { base: 'stop', past: 'stopped', rule: 'double', note: 'Короткий звук: подвоюємо p + ed' },
+      { base: 'play', past: 'played', rule: 'ed', note: 'Голосна a + y: буква y НЕ змінюється! (+ed)' },
+      { base: 'smile', past: 'smiled', rule: 'd', note: 'Закінчується на -e (+d)' },
+      { base: 'tidy', past: 'tidied', rule: 'ied', note: 'Приголосна d + y ➔ -ied' },
+      { base: 'clap', past: 'clapped', rule: 'double', note: 'Короткий звук: подвоюємо p + ed' },
+      { base: 'wash', past: 'washed', rule: 'ed', note: 'Звичайне дієслово (+ed)' },
+      { base: 'live', past: 'lived', rule: 'd', note: 'Закінчується на -e (+d)' },
+      { base: 'study', past: 'studied', rule: 'ied', note: 'Приголосна d + y ➔ -ied' },
+      { base: 'jog', past: 'jogged', rule: 'double', note: 'Короткий звук: подвоюємо g + ed' },
+      { base: 'bake', past: 'baked', rule: 'd', note: 'Закінчується на -e (+d)' },
+      { base: 'hop', past: 'hopped', rule: 'double', note: 'Короткий звук: подвоюємо p + ed' }
+    ];
+
+    let mode1Queue = [];
+    let activeClue = null;
+    let mode1SolvedCounts = { ed: 0, d: 0, ied: 0, double: 0 };
+    let solvedWordsHistory = [];
+
+    /* MODE 2: IMPOSTOR DATA */
+    const MODE2_ITEMS = [
+      {
+        displayWord: 'stoped',
+        baseWord: 'stop',
+        isCorrect: false,
+        correctWord: 'stopped',
+        options: ['stopped', 'stopied', 'stoped'],
+        ruleExpl: 'У дієслові stop перед p одна коротка голосна, тому p подвоюється: stopped!'
+      },
+      {
+        displayWord: 'watched',
+        baseWord: 'watch',
+        isCorrect: true,
+        correctWord: 'watched',
+        options: ['watched', 'watchd', 'watchied'],
+        ruleExpl: 'Правильно! До watch просто додаємо -ed ➔ watched.'
+      },
+      {
+        displayWord: 'plaied',
+        baseWord: 'play',
+        isCorrect: false,
+        correctWord: 'played',
+        options: ['played', 'plaied', 'playd'],
+        ruleExpl: 'Пастка! Перед y стоїть голосна (a), тому y не тікає: played!'
+      },
+      {
+        displayWord: 'cryed',
+        baseWord: 'cry',
+        isCorrect: false,
+        correctWord: 'cried',
+        options: ['cried', 'cryed', 'cryd'],
+        ruleExpl: 'Перед y стоїть приголосна r, отже y змінюється на -ied ➔ cried!'
+      },
+      {
+        displayWord: 'danced',
+        baseWord: 'dance',
+        isCorrect: true,
+        correctWord: 'danced',
+        options: ['danced', 'danceed', 'dancd'],
+        ruleExpl: 'Правильно! Слово dance закінчується на e, тому додаємо лише -d!'
+      },
+      {
+        displayWord: 'hopd',
+        baseWord: 'hop',
+        isCorrect: false,
+        correctWord: 'hopped',
+        options: ['hopped', 'hoped', 'hopd'],
+        ruleExpl: 'Дієслово hop (стрибати) вимагає подвоєння: hopped!'
+      },
+      {
+        displayWord: 'tidied',
+        baseWord: 'tidy',
+        isCorrect: true,
+        correctWord: 'tidied',
+        options: ['tidied', 'tidyed', 'tiddied'],
+        ruleExpl: 'Відмінно! Tidy ➔ y змінюється на -ied: tidied!'
+      }
+    ];
+
+    let mode2Queue = [];
+    let mode2CurrentIdx = 0;
+
+    /* MODE 3: SENTENCE PUZZLES DATA */
+    const MODE3_ITEMS = [
+      {
+        prefix: 'Yesterday, Detective Leo',
+        suffix: 'his secret office.',
+        base: 'tidy',
+        correct: 'tidied',
+        options: ['tidied', 'tidyed', 'tidyd'],
+        hint: 'Приголосна d + y ➔ -ied'
+      },
+      {
+        prefix: 'The black cat',
+        suffix: 'over the tall fence.',
+        base: 'jump',
+        correct: 'jumped',
+        options: ['jumped', 'jumpt', 'jumpied'],
+        hint: 'Звичайне дієслово: додаємо +ed'
+      },
+      {
+        prefix: 'The police officer',
+        suffix: 'the red car immediately.',
+        base: 'stop',
+        correct: 'stopped',
+        options: ['stopped', 'stoped', 'stopd'],
+        hint: 'Коротке слово: подвоюємо p ➔ stopped'
+      },
+      {
+        prefix: 'We',
+        suffix: 'a delicious detective cake.',
+        base: 'bake',
+        correct: 'baked',
+        options: ['baked', 'bakeed', 'bakied'],
+        hint: 'Закінчується на -e: додаємо лише +d'
+      },
+      {
+        prefix: 'The children',
+        suffix: 'football in the sunny park.',
+        base: 'play',
+        correct: 'played',
+        options: ['played', 'plaied', 'playyed'],
+        hint: 'Голосна a + y: буква y залишається ➔ played'
+      },
+      {
+        prefix: 'The baby',
+        suffix: 'when the loud thunder roared.',
+        base: 'cry',
+        correct: 'cried',
+        options: ['cried', 'cryed', 'cride'],
+        hint: 'Приголосна r + y ➔ -ied'
+      }
+    ];
+
+    let mode3CurrentIdx = 0;
+
+    /* ----------------------------------------------------
+       INITIALIZATION
+    ---------------------------------------------------- */
+    window.onload = function() {
+      initGame();
+    };
+
+    function initGame() {
+      // Shuffle datasets
+      mode1Queue = [...MODE1_ITEMS].sort(() => Math.random() - 0.5);
+      mode2Queue = [...MODE2_ITEMS].sort(() => Math.random() - 0.5);
+      mode3CurrentIdx = 0;
+      mode2CurrentIdx = 0;
+      score = 0;
+      streak = 0;
+      mode1SolvedCounts = { ed: 0, d: 0, ied: 0, double: 0 };
+      solvedWordsHistory = [];
+
+      updateStatsUI();
+      renderMode1Clue();
+      switchMode(1);
+    }
+
+    /* ----------------------------------------------------
+       MODE SWITCHING & TABS
+    ---------------------------------------------------- */
+    function switchMode(modeNum) {
+      currentMode = modeNum;
+      playSound('click');
+
+      // Update Tab Styles
+      for (let i = 1; i <= 3; i++) {
+        const tab = document.getElementById(`tabMode${i}`);
+        const cont = document.getElementById(`mode${i}Container`);
+        if (i === modeNum) {
+          tab.className = "mode-tab px-3 sm:px-5 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 bg-amber-500 text-amber-950 shadow-md";
+          cont.classList.remove('hidden');
+        } else {
+          tab.className = "mode-tab px-3 sm:px-5 py-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center gap-2 text-amber-900 hover:bg-amber-200/60";
+          cont.classList.add('hidden');
+        }
+      }
+
+      // Hide active feedback
+      hideBanner();
+
+      // Refresh specific mode view
+      if (modeNum === 1) {
+        updateMode1Progress();
+      } else if (modeNum === 2) {
+        loadMode2Card();
+      } else if (modeNum === 3) {
+        loadMode3Sentence();
+      }
+    }
+
+    /* ----------------------------------------------------
+       FEEDBACK & UI HELPERS
+    ---------------------------------------------------- */
+    function showBanner(text, isPositive = true) {
+      const banner = document.getElementById('feedbackBanner');
+      const bannerText = document.getElementById('feedbackText');
+      
+      bannerText.innerHTML = text;
+      banner.className = `min-h-[48px] mb-3 flex items-center justify-center text-center text-xs sm:text-sm font-bold px-4 py-2 rounded-2xl transition-all duration-200 opacity-100 transform translate-y-0 shadow-sm ${
+        isPositive ? 'bg-emerald-100 text-emerald-900 border-2 border-emerald-300' : 'bg-rose-100 text-rose-900 border-2 border-rose-300'
+      }`;
+    }
+
+    function hideBanner() {
+      const banner = document.getElementById('feedbackBanner');
+      banner.classList.add('opacity-0', '-translate-y-2');
+    }
+
+    function addScore(points) {
+      score += points;
+      streak += 1;
+      updateStatsUI();
+    }
+
+    function resetStreak() {
+      streak = 0;
+      updateStatsUI();
+    }
+
+    function updateStatsUI() {
+      document.getElementById('scoreVal').textContent = score;
+      document.getElementById('streakVal').textContent = streak;
+
+      // Update detective rank
+      let currentRank = RANKS[0];
+      for (const r of RANKS) {
+        if (score >= r.min) currentRank = r;
+      }
+      document.getElementById('rankLabel').textContent = currentRank.title;
+      document.getElementById('rankIcon').textContent = currentRank.icon;
+    }
+
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 70,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    function triggerMegaCelebration() {
+      playSound('fanfare');
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+        setTimeout(() => confetti({ particleCount: 100, angle: 60, spread: 80, origin: { x: 0 } }), 300);
+        setTimeout(() => confetti({ particleCount: 100, angle: 120, spread: 80, origin: { x: 1 } }), 600);
+      }
+      document.getElementById('finalScoreVal').textContent = score;
+      
+      let finalRank = RANKS[0].title;
+      for (const r of RANKS) {
+        if (score >= r.min) finalRank = r.title;
+      }
+      document.getElementById('finalRankDesc').textContent = `Ваше звання: ${finalRank} ⭐`;
+      toggleModal('winModal', true);
+    }
+
+    function toggleModal(id, show) {
+      const el = document.getElementById(id);
+      if (show) {
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    /* ====================================================
+       MODE 1 IMPLEMENTATION: SUITCASE SORTING
+    ======================================================= */
+    function renderMode1Clue() {
+      const container = document.getElementById('clueDeck');
+      container.innerHTML = '';
+
+      if (mode1Queue.length === 0) {
+        container.innerHTML = `
+          <div class="p-3 bg-emerald-100 rounded-2xl border border-emerald-300 text-emerald-900 font-bold text-sm">
+            🎉 Усі докази розсортовано! Переходь до режиму 2 або натисни "Почати знову".
+          </div>
+        `;
+        activeClue = null;
+        updateMode1Progress();
+        triggerConfetti();
+        return;
+      }
+
+      activeClue = mode1Queue[0];
+
+      const token = document.createElement('div');
+      token.id = 'activeClueToken';
+      token.className = "card-selected cursor-pointer px-6 py-3 rounded-2xl border-4 border-amber-500 bg-amber-100 text-amber-950 font-black text-2xl sm:text-3xl tracking-wide shadow-lg transform transition active:scale-95 flex items-center gap-2";
+      token.innerHTML = `<span>🔎</span> <span>${activeClue.base}</span>`;
+      token.setAttribute('title', 'Натисни на відповідну валізу внизу');
+
+      container.appendChild(token);
+      updateMode1Progress();
+    }
+
+    function targetSuitcaseClicked(ruleKey) {
+      if (!activeClue) {
+        showBanner('🔍 Усі слова у валізах! Перейди до <b>Режиму 2</b> зверху.', true);
+        return;
+      }
+
+      if (activeClue.rule === ruleKey) {
+        // Correct match!
+        playSound('correct');
+        addScore(15);
+
+        mode1SolvedCounts[ruleKey]++;
+        document.getElementById(`count-${ruleKey}`).textContent = `${mode1SolvedCounts[ruleKey]} розкрито`;
+
+        showBanner(`✨ Вірно! <b>${activeClue.base}</b> ➔ <span class="underline">${activeClue.past}</span> (${activeClue.note})`, true);
+
+        // Add to history list
+        solvedWordsHistory.unshift(`${activeClue.base} ➔ <b>${activeClue.past}</b>`);
+        document.getElementById('solvedWordsList').innerHTML = solvedWordsHistory.slice(0, 6).join(', ');
+
+        // Animate removed card
+        mode1Queue.shift();
+        renderMode1Clue();
+
+        if (mode1Queue.length === 0) {
+          triggerConfetti();
+          setTimeout(() => {
+            showBanner('🏆 Браво! Усі 14 слів розкладено по валізах! Спробуй <b>Режим 2: Злови самозванця</b>.', true);
+          }, 400);
+        }
+      } else {
+        // Wrong match
+        playSound('wrong');
+        resetStreak();
+        showBanner(`❌ Ой, ні! Куди ж покласти <b>${activeClue.base}</b>? Поглянь на закінчення або заглянь у правила 📖!`, false);
+      }
+    }
+
+    function updateMode1Progress() {
+      const total = MODE1_ITEMS.length;
+      const solved = total - mode1Queue.length;
+      const pct = Math.round((solved / total) * 100);
+
+      document.getElementById('modeProgressLabel').textContent = 'Валізи (Режим 1):';
+      document.getElementById('modeProgressPercent').textContent = `${solved} / ${total}`;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+    }
+
+    /* ====================================================
+       MODE 2 IMPLEMENTATION: CATCH THE IMPOSTOR
+    ======================================================= */
+    function loadMode2Card() {
+      if (mode2CurrentIdx >= mode2Queue.length) {
+        // Mode 2 Complete
+        document.getElementById('impostorWord').textContent = '🎉 ВСІХ СПІЙМАНО!';
+        document.getElementById('impostorHintBase').textContent = 'Усі підозрілі слова перевірено!';
+        document.getElementById('impostorActionButtons').classList.add('hidden');
+        document.getElementById('impostorFixArea').classList.add('hidden');
+        triggerConfetti();
+        showBanner('🌟 Чудова робота! Жодному самозванцю не вдалося тебе обдурити! Спробуй <b>Режим 3: Секретний шифр</b>.', true);
+        return;
+      }
+
+      const item = mode2Queue[mode2CurrentIdx];
+      document.getElementById('impostorIndex').textContent = `${mode2CurrentIdx + 1} з ${mode2Queue.length}`;
+      document.getElementById('impostorWord').textContent = item.displayWord;
+      document.getElementById('impostorHintBase').textContent = `(початкова форма: ${item.baseWord})`;
+
+      document.getElementById('impostorActionButtons').classList.remove('hidden');
+      document.getElementById('impostorFixArea').classList.add('hidden');
+
+      updateMode2Progress();
+    }
+
+    function handleImpostorVerdict(playerSaidReal) {
+      const item = mode2Queue[mode2CurrentIdx];
+
+      if (playerSaidReal === item.isCorrect) {
+        // Correct verdict!
+        playSound('correct');
+        addScore(10);
+
+        if (!item.isCorrect) {
+          // It was indeed a fake! Show the repair/fix options
+          showBanner(`🕵️ Точно в ціль! <b>${item.displayWord}</b> — це підробка! Виправ доказ:`, true);
+          showImpostorFixOptions(item);
+        } else {
+          // It was real, and player confirmed it
+          showBanner(`✅ Чудово помічено! <b>${item.displayWord}</b> написано без помилок! ${item.ruleExpl}`, true);
+          mode2CurrentIdx++;
+          setTimeout(() => {
+            loadMode2Card();
+          }, 1200);
+        }
+      } else {
+        // Wrong verdict!
+        playSound('wrong');
+        resetStreak();
+        if (item.isCorrect) {
+          showBanner(`❌ Зачекай! Слово <b>${item.displayWord}</b> є абсолютно правильним. ${item.ruleExpl}`, false);
+        } else {
+          showBanner(`🚨 Обережно! Слово <b>${item.displayWord}</b> містить помилку! Це підробка.`, false);
+        }
+      }
+    }
+
+    function showImpostorFixOptions(item) {
+      document.getElementById('impostorActionButtons').classList.add('hidden');
+      const fixArea = document.getElementById('impostorFixArea');
+      const optContainer = document.getElementById('impostorOptions');
+      optContainer.innerHTML = '';
+      fixArea.classList.remove('hidden');
+
+      // Shuffle options
+      const shuffled = [...item.options].sort(() => Math.random() - 0.5);
+
+      shuffled.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = "bg-amber-100 hover:bg-amber-200 border-2 border-amber-400 text-amber-950 font-black px-5 py-2.5 rounded-xl text-base transition shadow active:scale-95";
+        btn.textContent = opt;
+        btn.onclick = () => handleFixSelection(opt, item);
+        optContainer.appendChild(btn);
+      });
+    }
+
+    function handleFixSelection(selected, item) {
+      if (selected === item.correctWord) {
+        playSound('correct');
+        addScore(15);
+        showBanner(`🎉 Браво! Правильно: <b>${item.correctWord}</b>. ${item.ruleExpl}`, true);
+        mode2CurrentIdx++;
+        setTimeout(() => {
+          loadMode2Card();
+        }, 1300);
+      } else {
+        playSound('wrong');
+        resetStreak();
+        showBanner(`Спробуй ще раз! Як правильно утворити минулий час від <b>${item.baseWord}</b>?`, false);
+      }
+    }
+
+    function updateMode2Progress() {
+      const total = mode2Queue.length;
+      const solved = mode2CurrentIdx;
+      const pct = Math.round((solved / total) * 100);
+
+      document.getElementById('modeProgressLabel').textContent = 'Самозванці (Режим 2):';
+      document.getElementById('modeProgressPercent').textContent = `${solved} / ${total}`;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+    }
+
+    /* ====================================================
+       MODE 3 IMPLEMENTATION: DETECTIVE SECRET CODE
+    ======================================================= */
+    function loadMode3Sentence() {
+      const total = MODE3_ITEMS.length;
+      document.getElementById('sentenceTotal').textContent = total;
+
+      if (mode3CurrentIdx >= total) {
+        // All modes finished! Final Victory!
+        triggerMegaCelebration();
+        return;
+      }
+
+      const item = MODE3_ITEMS[mode3CurrentIdx];
+      document.getElementById('sentenceIndex').textContent = mode3CurrentIdx + 1;
+      document.getElementById('sentencePrefix').textContent = item.prefix;
+      document.getElementById('sentenceSuffix').textContent = item.suffix;
+      document.getElementById('sentenceBlank').textContent = '______';
+      document.getElementById('sentenceBlank').className = "mx-1 px-3 py-1 bg-amber-300/80 rounded-lg border-b-4 border-amber-500 inline-block text-amber-900 font-mono min-w-[100px] text-center";
+      document.getElementById('sentenceBaseWord').textContent = item.base;
+
+      const expl = document.getElementById('sentenceExplanation');
+      expl.classList.add('hidden');
+      expl.innerHTML = '';
+
+      // Options
+      const grid = document.getElementById('sentenceOptionsGrid');
+      grid.innerHTML = '';
+
+      const shuffled = [...item.options].sort(() => Math.random() - 0.5);
+
+      shuffled.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = "sentence-opt-btn bg-amber-50 hover:bg-amber-100 border-2 border-amber-300 hover:border-amber-500 text-amber-950 font-black py-3 px-4 rounded-2xl text-lg transition shadow active:scale-95 text-center";
+        btn.textContent = opt;
+        btn.onclick = () => handleSentenceAnswer(opt, item);
+        grid.appendChild(btn);
+      });
+
+      updateMode3Progress();
+    }
+
+    function handleSentenceAnswer(selected, item) {
+      const blank = document.getElementById('sentenceBlank');
+      const expl = document.getElementById('sentenceExplanation');
+
+      if (selected === item.correct) {
+        playSound('correct');
+        addScore(20);
+        blank.textContent = selected;
+        blank.className = "mx-1 px-3 py-1 bg-emerald-200 text-emerald-950 rounded-lg border-b-4 border-emerald-500 inline-block font-mono min-w-[100px] text-center font-black animate-pulse";
+
+        expl.innerHTML = `💡 <b>Підказка детективу:</b> ${item.hint}`;
+        expl.classList.remove('hidden');
+
+        showBanner(`🌟 Чудово! <i>${item.prefix} <b>${selected}</b> ${item.suffix}</i>`, true);
+
+        // Disable options
+        document.querySelectorAll('.sentence-opt-btn').forEach(b => b.disabled = true);
+
+        setTimeout(() => {
+          mode3CurrentIdx++;
+          loadMode3Sentence();
+        }, 1500);
+      } else {
+        playSound('wrong');
+        resetStreak();
+        showBanner(`❌ Ой, майже! Подумай над правилом для дієслова <b>${item.base}</b>.`, false);
+      }
+    }
+
+    function updateMode3Progress() {
+      const total = MODE3_ITEMS.length;
+      const solved = mode3CurrentIdx;
+      const pct = Math.round((solved / total) * 100);
+
+      document.getElementById('modeProgressLabel').textContent = 'Шифр (Режим 3):';
+      document.getElementById('modeProgressPercent').textContent = `${solved} / ${total}`;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+    }
+
+    /* ----------------------------------------------------
+       RESTART GAME FULL
+    ---------------------------------------------------- */
+    function restartFullGame() {
+      toggleModal('winModal', false);
+      initGame();
+      showBanner('🚀 Нова справа відкрита! Успіхів, детективе!', true);
+    }
+  </script>
+</body>
+</html>
